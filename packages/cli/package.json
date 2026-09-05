@@ -1,10 +1,10 @@
 {
   "name": "@abjad-org/research-chef",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "research-chef: an interactive, BYOK-powered AI research assistant for your terminal",
   "type": "module",
   "bin": {
-    "research-chef": "./bin/research-chef.js"
+    "research-chef": "bin/research-chef.js"
   },
   "files": [
     "bin",
@@ -48,7 +48,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/abjad-org/research-chef.git",
+    "url": "git+https://github.com/abjad-org/research-chef.git",
     "directory": "packages/cli"
   },
   "bugs": {

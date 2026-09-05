@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Nothing yet — this section will track changes as they land on `main` ahead
 of the next release.
 
+## [0.1.2] - 2026-09-05
+
+### Fixed
+
+- Normalized `packages/cli/package.json` fields flagged by npm during
+  publish (`bin` path and `repository.url`) using `npm pkg fix`, so
+  publishing no longer emits auto-correction warnings
+
 ## [0.1.1] - 2026-09-05
 
 ### Added
@@ -53,6 +61,7 @@ of the next release.
 - Project documentation: README, CONTRIBUTING guide, Code of Conduct,
   Security Policy, and this Changelog
 
-[Unreleased]: https://github.com/abjad-org/research-chef/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/abjad-org/research-chef/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/abjad-org/research-chef/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/abjad-org/research-chef/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/abjad-org/research-chef/releases/tag/v0.1.0
