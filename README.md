@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![CI](https://github.com/abjad-org/research-chef/actions/workflows/ci.yml/badge.svg)](https://github.com/abjad-org/research-chef/actions/workflows/ci.yml)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D24.19-brightgreen)](https://nodejs.org)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D18.17-brightgreen)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/built%20with-TypeScript-3178c6)](https://www.typescriptlang.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
