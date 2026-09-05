@@ -41,7 +41,7 @@ You only need a key for the provider you actually want to use.
 ## 🚀 Quick start
 
 ```bash
-git clone https://github.com/<your-username>/research-chef.git
+git clone https://github.com/abjad-org/research-chef.git
 cd research-chef
 npm install
 npm run build
