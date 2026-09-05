@@ -1,0 +1,48 @@
+name: CI
+
+# Runs on every push to main and on every pull request targeting main,
+# so broken code gets caught before it's merged.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+  # Allows running this workflow manually from the Actions tab.
+  workflow_dispatch:
+
+jobs:
+  typecheck-and-build:
+    name: Typecheck & build (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      # Don't cancel the other Node versions if one of them fails, so we get
+      # a full picture of compatibility in a single run.
+      fail-fast: false
+      matrix:
+        # Matches the minimum supported version declared in package.json
+        # ("engines.node") plus the current LTS release.
+        node-version: [18.17.0, 20.x]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Verify CLI entry point exists
+        run: test -f packages/cli/dist/index.js

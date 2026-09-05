@@ -1,0 +1,20 @@
+{
+  "name": "research-chef-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Monorepo for research-chef, an interactive AI research CLI",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace=@research-chef/cli",
+    "dev": "npm run dev --workspace=@research-chef/cli",
+    "start": "npm run start --workspace=@research-chef/cli",
+    "typecheck": "npm run typecheck --workspace=@research-chef/cli",
+    "clean": "npm run clean --workspace=@research-chef/cli"
+  },
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "license": "MIT"
+}
