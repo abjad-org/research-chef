@@ -1,6 +1,6 @@
 {
-  "name": "@research-chef/cli",
-  "version": "0.1.0",
+  "name": "@abjad-org/research-chef",
+  "version": "0.1.1",
   "description": "research-chef: an interactive, BYOK-powered AI research assistant for your terminal",
   "type": "module",
   "bin": {
@@ -10,6 +10,9 @@
     "bin",
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "tsx src/index.ts",
     "build": "tsc -p tsconfig.json",
@@ -30,5 +33,26 @@
   "engines": {
     "node": ">=18.17.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "keywords": [
+    "cli",
+    "ai",
+    "research",
+    "byok",
+    "openai",
+    "anthropic",
+    "claude",
+    "gemini",
+    "terminal",
+    "clack"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abjad-org/research-chef.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/abjad-org/research-chef/issues"
+  },
+  "homepage": "https://github.com/abjad-org/research-chef#readme"
 }

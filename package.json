@@ -1,20 +1,28 @@
 {
-  "name": "research-chef-monorepo",
+  "name": "research-chef",
   "private": true,
-  "version": "0.1.0",
-  "description": "Monorepo for research-chef, an interactive AI research CLI",
+  "version": "0.1.1",
+  "description": "An interactive BYOK AI research CLI",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspace=@research-chef/cli",
-    "dev": "npm run dev --workspace=@research-chef/cli",
-    "start": "npm run start --workspace=@research-chef/cli",
-    "typecheck": "npm run typecheck --workspace=@research-chef/cli",
-    "clean": "npm run clean --workspace=@research-chef/cli"
+    "build": "npm run build --workspace=@abjad-org/research-chef",
+    "dev": "npm run dev --workspace=@abjad-org/research-chef",
+    "start": "npm run start --workspace=@abjad-org/research-chef",
+    "typecheck": "npm run typecheck --workspace=@abjad-org/research-chef",
+    "clean": "npm run clean --workspace=@abjad-org/research-chef"
   },
   "engines": {
     "node": ">=18.17.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abjad-org/research-chef.git"
+  },
+  "bugs": {
+    "url": "https://github.com/abjad-org/research-chef/issues"
+  },
+  "homepage": "https://github.com/abjad-org/research-chef#readme"
 }

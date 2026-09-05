@@ -1,4 +1,4 @@
-# @research-chef/cli
+# @abjad-org/research-chef
 
 An interactive terminal AI research assistant with **BYOK** (Bring Your Own
 Key) support, built with [`@clack/prompts`](https://github.com/natemoo-re/clack)
@@ -17,6 +17,21 @@ and [`picocolors`](https://github.com/alexeyraspopov/picocolors).
   via `@clack/prompts` and `picocolors`.
 
 ## Getting started
+
+### Install from npm (recommended for end users)
+
+```bash
+npx @abjad-org/research-chef
+```
+
+or install it globally:
+
+```bash
+npm install -g @abjad-org/research-chef
+research-chef
+```
+
+### Run from source (for development)
 
 From the monorepo root:
 

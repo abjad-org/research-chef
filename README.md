@@ -3,6 +3,7 @@
 **An interactive AI research assistant for your terminal — bring your own API key, ask anything, and keep the conversation going.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![npm version](https://img.shields.io/npm/v/%40abjad-org%2Fresearch-chef.svg)](https://www.npmjs.com/package/@abjad-org/research-chef)
 [![CI](https://github.com/abjad-org/research-chef/actions/workflows/ci.yml/badge.svg)](https://github.com/abjad-org/research-chef/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.17-brightgreen)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/built%20with-TypeScript-3178c6)](https://www.typescriptlang.org/)
@@ -40,6 +41,23 @@ You only need a key for the provider you actually want to use.
 
 ## 🚀 Quick start
 
+The easiest way to try research-chef is with `npx` — no install needed:
+
+```bash
+npx @abjad-org/research-chef
+```
+
+Or install it globally so the `research-chef` command is always available:
+
+```bash
+npm install -g @abjad-org/research-chef
+research-chef
+```
+
+### Running from source
+
+If you'd rather run it from source (e.g. to contribute or customize it):
+
 ```bash
 git clone https://github.com/abjad-org/research-chef.git
 cd research-chef
@@ -69,7 +87,7 @@ Yes. Your key is used only in memory for the current session, to call the offici
 
 ## 🗂️ Project structure
 
-This repository is organized as an **npm workspaces monorepo**, which keeps the door open for future packages (for example, a shared `@research-chef/core` package reused by a future GUI) without a big restructure later.
+This repository is organized as an **npm workspaces monorepo**, which keeps the door open for future packages (for example, a shared `@abjad-org/research-chef-core` package reused by a future GUI) without a big restructure later.
 
 ```
 research-chef/
@@ -102,6 +120,24 @@ For a deeper look at the architecture and how to extend it, see the [CLI package
 Contributions, bug reports, and feature ideas are all welcome! Please read [CONTRIBUTING.md](./CONTRIBUTING.md) to get started — it covers everything from setting up the project locally to our commit message style.
 
 New to the project? Look for issues labeled [`good first issue`](../../issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+
+## 🚢 Releasing (maintainers)
+
+New versions are published to npm automatically by [`.github/workflows/publish.yml`](./.github/workflows/publish.yml) whenever a `v*.*.*` tag is pushed:
+
+```bash
+# 1. Bump the version in packages/cli/package.json (and root package.json)
+# 2. Add a new entry to CHANGELOG.md
+# 3. Commit the changes
+git add packages/cli/package.json package.json CHANGELOG.md
+git commit -m "chore: release v0.1.0"
+
+# 4. Tag and push
+git tag v0.1.0
+git push origin main --tags
+```
+
+The workflow will type-check, build, verify the tag matches `package.json`, and publish `@abjad-org/research-chef` to npm.
 
 ## 📄 License
 
