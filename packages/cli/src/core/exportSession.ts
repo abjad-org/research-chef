@@ -61,12 +61,13 @@ export function renderMarkdown(topic: string, history: ChatMessage[], now: Date 
 
   for (const message of history) {
     if (message.role === "user") {
-      lines.push("## You");
+      lines.push("## 🧑 You");
     } else {
-      lines.push("## AI");
+      lines.push("## 🤖 AI");
     }
     lines.push("");
     lines.push(message.content);
+
     lines.push("");
   }
 
