@@ -18,7 +18,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node bin/research-chef.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test test/**/*.test.ts",
+    "test": "tsx scripts/run-tests.mjs",
     "clean": "rimraf dist"
   },
   "dependencies": {
