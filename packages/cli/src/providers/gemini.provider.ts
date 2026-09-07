@@ -1,5 +1,6 @@
 import type { AiProvider, ChatMessage } from "../types/index.js";
 import { ProviderError } from "../types/index.js";
+import { fetchJsonWithRetry } from "./httpClient.js";
 
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -9,9 +10,6 @@ interface GeminiResponse {
       parts?: Array<{ text?: string }>;
     };
   }>;
-  error?: {
-    message?: string;
-  };
 }
 
 /**
@@ -20,45 +18,45 @@ interface GeminiResponse {
  */
 export const geminiProvider: AiProvider = {
   async sendMessage({ apiKey, model, messages }): Promise<string> {
-    const url = `${GEMINI_BASE_URL}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(
-      apiKey,
-    )}`;
-
     const { systemInstruction, contents } = toGeminiPayload(messages);
 
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemInstruction,
-          contents,
-        }),
-      });
-    } catch (error) {
-      throw new ProviderError(
-        "Could not reach Google Gemini. Please check your internet connection.",
-        "gemini",
-        error,
-      );
+    const result = await fetchJsonWithRetry<GeminiResponse>(buildUrl(model, apiKey), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ systemInstruction, contents }),
+    });
+
+    if (!result.ok) {
+      throw new ProviderError(`Gemini error: ${result.message}`, "gemini", result.kind, result.cause);
     }
 
-    const data = (await response.json().catch(() => null)) as GeminiResponse | null;
-
-    if (!response.ok) {
-      const message = data?.error?.message ?? `Request failed with status ${response.status}.`;
-      throw new ProviderError(`Gemini error: ${message}`, "gemini");
-    }
-
-    const text = data?.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("");
+    const text = result.data.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("");
     if (!text) {
-      throw new ProviderError("Gemini returned an empty response.", "gemini");
+      throw new ProviderError("Gemini returned an empty response.", "gemini", "unknown");
     }
 
     return text.trim();
   },
+
+  async testConnection({ apiKey, model }): Promise<void> {
+    const result = await fetchJsonWithRetry<GeminiResponse>(buildUrl(model, apiKey), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: "Hi" }] }],
+        generationConfig: { maxOutputTokens: 1 },
+      }),
+    });
+
+    if (!result.ok) {
+      throw new ProviderError(`Gemini error: ${result.message}`, "gemini", result.kind, result.cause);
+    }
+  },
 };
+
+function buildUrl(model: string, apiKey: string): string {
+  return `${GEMINI_BASE_URL}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+}
 
 /**
  * Gemini uses "user"/"model" roles (not "assistant") and a dedicated

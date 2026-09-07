@@ -2,11 +2,13 @@ import type { AiProvider, ProviderId } from "../types/index.js";
 import { openAiProvider } from "./openai.provider.js";
 import { anthropicProvider } from "./anthropic.provider.js";
 import { geminiProvider } from "./gemini.provider.js";
+import { customProvider } from "./custom.provider.js";
 
 const ADAPTERS: Record<ProviderId, AiProvider> = {
   openai: openAiProvider,
   anthropic: anthropicProvider,
   gemini: geminiProvider,
+  custom: customProvider,
 };
 
 /**

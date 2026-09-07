@@ -38,7 +38,7 @@ latest released version on the `main` branch.
 | Latest (`main`) | ✅ |
 | Older tagged releases | ❌ |
 
-Once the project reaches a stable 0.1.x line with multiple maintained
+Once the project reaches a stable 0.2.x line with multiple maintained
 versions, this table will be updated accordingly.
 
 ## Reporting a vulnerability

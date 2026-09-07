@@ -61,7 +61,7 @@ a discussion issue and ask — we're happy to point you in the right direction.
 
 ## Getting set up locally
 
-You'll need [Node.js](https://nodejs.org) **v18.17 or newer**.
+You'll need [Node.js](https://nodejs.org) **v18.19 or newer**.
 
 ```bash
 # 1. Fork the repository on GitHub, then clone your fork
@@ -159,7 +159,7 @@ helps us write better changelogs.
 6. Fill in the pull request template — describe what changed and why, and
    link any related issue.
 7. Our CI workflow will automatically run `typecheck` and `build` on your
-   pull request (Node.js 18.17 and 20.x). Please make sure it passes —
+   pull request (Node.js 18.19 and 20.x). Please make sure it passes —
    you'll see the status right on the PR page.
 8. Be responsive to review feedback. We'll do our best to review promptly
    and kindly.
@@ -191,8 +191,10 @@ This is one of the most valuable contributions you can make! Thanks to the
 adapter pattern used in `src/providers/`, it only takes three steps:
 
 1. **Create the adapter** — add `src/providers/<name>.provider.ts`
-   implementing the `AiProvider` interface (a single `sendMessage()`
-   method that calls the provider's API and returns plain text).
+   implementing the `AiProvider` interface (a `sendMessage()` method that
+   calls the provider's API and returns plain text, plus a
+   `testConnection()` method that sends a minimal request to verify a key
+   and model actually work).
 2. **Register the metadata** — add an entry to `PROVIDERS` in
    `src/providers/registry.ts` with the provider's label, hint, default
    model, and a basic API key format check.
@@ -203,6 +205,16 @@ That's it — the UI and the research/chat engine work against the
 `AiProvider` interface, so no other files need to change. See the existing
 `openai.provider.ts`, `anthropic.provider.ts`, and `gemini.provider.ts` for
 reference implementations.
+
+**Building support for an OpenAI-compatible API?** Many providers (Groq,
+Together AI, OpenRouter, Ollama, self-hosted deployments) speak the exact
+same request/response shape as OpenAI. For those, skip writing a new
+adapter and instead reuse
+`createOpenAiCompatibleProvider(providerId, defaultBaseUrl)` — see
+`src/providers/custom.provider.ts` for an example. This is also how the
+built-in "Custom (OpenAI-compatible)" provider works, which lets users
+point research-chef at any compatible endpoint by entering its base URL at
+setup time.
 
 ---
 

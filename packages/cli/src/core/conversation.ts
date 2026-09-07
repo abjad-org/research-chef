@@ -29,6 +29,16 @@ export class Conversation {
     }
   }
 
+  /**
+   * Clears all prior turns and restarts the conversation with only the
+   * system prompt, so the user can begin a new topic without restarting
+   * the whole CLI.
+   */
+  reset(): void {
+    this.messages.length = 0;
+    this.messages.push({ role: "system", content: RESEARCH_SYSTEM_PROMPT });
+  }
+
   /** Returns a defensive copy of the full message history. */
   getHistory(): ChatMessage[] {
     return [...this.messages];

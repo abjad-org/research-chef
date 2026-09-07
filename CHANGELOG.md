@@ -10,6 +10,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Nothing yet — this section will track changes as they land on `main` ahead
 of the next release.
 
+## [0.2.0] - 2026-09-07
+
+### Added
+
+- **API key verification at setup** — after entering an API key and model,
+  research-chef now sends a minimal test request to confirm they actually
+  work together before moving on to the research topic. Invalid keys and
+  unavailable models are now caught immediately, with clear guidance:
+  - An invalid/expired key prompts the user to re-enter it
+  - A key that's valid but paired with a model unavailable on that
+    account/plan prompts the user to pick a different model
+  - Network hiccups or temporary provider outages no longer block setup —
+    the user can proceed and will see a clear error later if needed
+- **`/model` command** — switch to a different AI model mid-conversation
+  without restarting the CLI. The new model is verified the same way as
+  during setup before being applied.
+- **`/clear` command** — reset the current conversation and start a new
+  topic in the same session, after a confirmation prompt.
+- **`/save` command** — export the current conversation to a Markdown file
+  under `~/.research-chef/exports/`, named after the topic and timestamp.
+- **Custom (OpenAI-compatible) provider** — connect research-chef to any
+  endpoint that speaks the OpenAI Chat Completions API shape, such as
+  [Groq](https://groq.com), [Together AI](https://together.ai),
+  [OpenRouter](https://openrouter.ai), a local [Ollama](https://ollama.com)
+  server, LM Studio, or a self-hosted deployment:
+  - At setup, choosing "Custom (OpenAI-compatible)" prompts for the
+    endpoint's base URL (e.g. `https://api.groq.com/openai/v1`) in addition
+    to the usual API key and model.
+  - The API key is optional when the base URL points at a local Ollama
+    server (`localhost` / `127.0.0.1` / `[::1]`), since those typically run
+    without authentication.
+  - The same key/model verification step used for built-in providers
+    applies here too, so misconfigured endpoints or unavailable models are
+    caught immediately.
+- Automated test suite using Node's built-in test runner (`node:test`),
+  covering the HTTP retry/timeout logic, the research/chat engine, the
+  session export module, slash command handling, the setup verification
+  flow, and the OpenAI-compatible provider factory (76 tests total). Run
+  with `npm test`.
+- CI now runs the test suite in addition to type-checking and building.
+
+### Changed
+
+- All provider adapters (OpenAI, Anthropic, Gemini) now share a common HTTP
+  client (`src/providers/httpClient.ts`) with:
+  - A 30-second timeout per request, so a slow or unresponsive provider no
+    longer hangs the CLI indefinitely
+  - Automatic retries (up to 2, with a 1-second delay) for transient
+    failures — network errors and 5xx responses. Authentication errors,
+    not-found errors, and rate limiting are never retried, since retrying
+    them would just fail again the same way.
+- `ProviderError` now carries a `kind` field (`auth`, `not_found`,
+  `rate_limited`, `network`, `timeout`, `server`, or `unknown`) so callers
+  can react appropriately to each failure type instead of only having a
+  generic message.
+- Refactored the OpenAI adapter into a reusable
+  `createOpenAiCompatibleProvider(providerId, defaultBaseUrl)` factory, so
+  future OpenAI-compatible providers (built-in or custom) can share the
+  same request logic instead of duplicating it. The built-in OpenAI
+  provider and the new custom provider are now both built from this
+  factory.
+- `AiProvider.sendMessage()` and `AiProvider.testConnection()` now accept
+  an optional `baseUrl`, and `SessionConfig` carries it through the engine
+  to the active adapter.
+- Raised the minimum supported Node.js version from 18.17.0 to **18.19.0**,
+  required for the test runner tooling used in this release.
+
 ## [0.1.2] - 2026-09-05
 
 ### Fixed
@@ -61,7 +128,8 @@ of the next release.
 - Project documentation: README, CONTRIBUTING guide, Code of Conduct,
   Security Policy, and this Changelog
 
-[Unreleased]: https://github.com/abjad-org/research-chef/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/abjad-org/research-chef/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/abjad-org/research-chef/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/abjad-org/research-chef/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/abjad-org/research-chef/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/abjad-org/research-chef/releases/tag/v0.1.0

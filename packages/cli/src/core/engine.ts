@@ -10,14 +10,18 @@ import { buildResearchKickoffMessage } from "./prompts.js";
  */
 export class ResearchEngine {
   private readonly conversation = new Conversation();
+  private currentTopic: string;
 
   constructor(
     private readonly provider: AiProvider,
-    private readonly config: SessionConfig,
-  ) {}
+    private config: SessionConfig,
+  ) {
+    this.currentTopic = "Untitled research session";
+  }
 
   /** Kicks off the initial structured research report for a topic. */
   async research(topic: string): Promise<string> {
+    this.currentTopic = topic;
     const kickoffMessage = buildResearchKickoffMessage(topic);
     return this.send(kickoffMessage);
   }
@@ -35,6 +39,7 @@ export class ResearchEngine {
         apiKey: this.config.apiKey,
         model: this.config.model,
         messages: this.conversation.getHistory(),
+        baseUrl: this.config.baseUrl,
       });
 
       this.conversation.addAssistantMessage(reply);
@@ -51,8 +56,46 @@ export class ResearchEngine {
       throw new ProviderError(
         "Something unexpected went wrong while talking to the AI provider.",
         this.config.provider.id,
+        "unknown",
         error,
       );
     }
+  }
+
+  /**
+   * Verifies that the given model works for this account (via a minimal
+   * test request) and, if so, switches to it for subsequent requests.
+   * Throws a ProviderError (propagated from testConnection) if the model
+   * cannot be used, leaving the current model unchanged.
+   */
+  async changeModel(model: string): Promise<void> {
+    await this.provider.testConnection({ apiKey: this.config.apiKey, model, baseUrl: this.config.baseUrl });
+    this.config = { ...this.config, model };
+  }
+
+  /** Returns the model currently in use. */
+  getModel(): string {
+    return this.config.model;
+  }
+
+  /** Returns metadata about the provider currently in use. */
+  getProviderInfo() {
+    return this.config.provider;
+  }
+
+  /** Returns the topic of the most recent research() call. */
+  getCurrentTopic(): string {
+    return this.currentTopic;
+  }
+
+  /** Clears the conversation history, starting a fresh session. */
+  resetConversation(): void {
+    this.conversation.reset();
+    this.currentTopic = "Untitled research session";
+  }
+
+  /** Returns the full conversation history, excluding the system prompt. */
+  getVisibleHistory() {
+    return this.conversation.getHistory().filter((message) => message.role !== "system");
   }
 }

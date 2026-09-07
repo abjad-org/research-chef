@@ -4,9 +4,7 @@ import { ProviderError } from "../types/index.js";
 import { theme } from "./theme.js";
 import { renderAssistantReply, renderError } from "./render.js";
 import { exitGracefully } from "./cancel.js";
-
-const EXIT_COMMAND = "/exit";
-const HELP_COMMAND = "/help";
+import { SLASH_COMMANDS, handleCommand } from "./commands.js";
 
 /**
  * Runs the interactive follow-up chat loop: repeatedly prompts the user for
@@ -17,13 +15,12 @@ export async function runChatLoop(engine: ResearchEngine): Promise<void> {
   clack.log.step(theme.heading("Step 4 — Keep exploring"));
   clack.log.message(
     [
-      `Ask a follow-up question, or type ${theme.command(EXIT_COMMAND)} to quit.`,
-      `Type ${theme.command(HELP_COMMAND)} to see this tip again.`,
+      `Ask a follow-up question, or type ${theme.command(SLASH_COMMANDS.exit)} to quit.`,
+      `Type ${theme.command(SLASH_COMMANDS.help)} to see all available commands.`,
     ].join("\n"),
   );
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  for (;;) {
     const input = await clack.text({
       message: theme.user("You ›"),
       placeholder: "Ask a follow-up question…",
@@ -39,12 +36,12 @@ export async function runChatLoop(engine: ResearchEngine): Promise<void> {
       continue;
     }
 
-    if (isExitCommand(message)) {
-      break;
-    }
+    const commandResult = await handleCommand(message, engine);
 
-    if (isHelpCommand(message)) {
-      clack.log.message(`Type ${theme.command(EXIT_COMMAND)} whenever you're ready to quit.`);
+    if (commandResult.handled) {
+      if (commandResult.shouldExit) {
+        break;
+      }
       continue;
     }
 
@@ -64,14 +61,6 @@ async function handleUserMessage(engine: ResearchEngine, message: string): Promi
     spinner.stop("Something went wrong.");
     renderError(describeError(error));
   }
-}
-
-function isExitCommand(message: string): boolean {
-  return message.toLowerCase() === EXIT_COMMAND;
-}
-
-function isHelpCommand(message: string): boolean {
-  return message.toLowerCase() === HELP_COMMAND;
 }
 
 function describeError(error: unknown): string {

@@ -23,7 +23,7 @@ jobs:
       matrix:
         # Matches the minimum supported version declared in package.json
         # ("engines.node") plus the current LTS release.
-        node-version: [18.17.0, 20.x]
+        node-version: [18.19.0, 20.x]
 
     steps:
       - name: Check out repository
@@ -40,6 +40,9 @@ jobs:
 
       - name: Type-check
         run: npm run typecheck
+
+      - name: Run tests
+        run: npm test
 
       - name: Build
         run: npm run build

@@ -6,13 +6,18 @@ and [`picocolors`](https://github.com/alexeyraspopov/picocolors).
 
 ## Features
 
-- 🔑 **BYOK** — bring your own API key for OpenAI, Anthropic (Claude), or
-  Google Gemini. No key ever leaves your machine except to call the
-  provider's official API directly.
+- 🔑 **BYOK** — bring your own API key for OpenAI, Anthropic (Claude),
+  Google Gemini, or any OpenAI-compatible endpoint (Groq, Together AI,
+  OpenRouter, a local Ollama server, self-hosted deployments, etc). No key
+  ever leaves your machine except to call the provider's own API directly.
+- 🛡️ **Verified before you start** — your API key and model are tested with
+  a minimal request during setup, so problems surface immediately instead
+  of after you've already typed out a research topic.
 - 🔍 **One-shot research report** — enter a topic and get a clear, structured
   summary (overview, key points, context, takeaway).
 - 💬 **Interactive follow-up chat** — keep asking questions in the same
-  session until you type `/exit`.
+  session, switch models with `/model`, start fresh with `/clear`, or save
+  the conversation with `/save` — until you type `/exit`.
 - 🎨 **Polished terminal UI** — spinners, colored output, and boxed panels
   via `@clack/prompts` and `picocolors`.
 
@@ -50,16 +55,27 @@ npm run dev
 ## Usage walkthrough
 
 1. **Welcome screen** — a short banner explains what the tool does.
-2. **Connect your provider** — pick OpenAI, Anthropic, or Gemini, then paste
-   your API key (input is masked). Optionally override the default model.
-3. **Enter a research topic** — e.g. *"The impact of AI on renewable energy
+2. **Connect your provider** — pick OpenAI, Anthropic, Gemini, or a Custom
+   (OpenAI-compatible) endpoint, then paste your API key (input is masked).
+   Optionally override the default model. For a custom endpoint, you'll
+   also be asked for its base URL; if it looks like a local Ollama server,
+   the API key can be left blank.
+3. **Verification** — a quick, minimal request confirms your key and model
+   actually work together before moving on, so problems are caught here
+   rather than later.
+4. **Enter a research topic** — e.g. *"The impact of AI on renewable energy
    adoption"*.
-4. **Research spinner** — a loading spinner plays while the AI puts together
+5. **Research spinner** — a loading spinner plays while the AI puts together
    its answer.
-5. **Research report** — a structured, easy-to-read summary is printed in a
+6. **Research report** — a structured, easy-to-read summary is printed in a
    boxed panel.
-6. **Chat loop** — keep asking follow-up questions. Type `/exit` at any time
-   to end the session, or `/help` for a reminder of the commands.
+7. **Chat loop** — keep asking follow-up questions, or use a command:
+   - `/model` — switch to a different AI model mid-conversation
+   - `/clear` — clear the conversation and start a new topic
+   - `/save` — export the conversation to a Markdown file under
+     `~/.research-chef/exports/`
+   - `/help` — show all available commands
+   - `/exit` — quit research-chef
 
 ## Where does my API key go?
 
@@ -100,13 +116,21 @@ src/
 ## Adding a new provider
 
 1. Create `src/providers/<name>.provider.ts` implementing the `AiProvider`
-   interface (a single `sendMessage()` method).
+   interface (a `sendMessage()` and a `testConnection()` method).
 2. Register its metadata (label, hint, default model, key format check) in
    `src/providers/registry.ts`.
 3. Add it to the `ADAPTERS` map in `src/providers/factory.ts`.
 
 No other file needs to change — the UI and engine work against the
 `AiProvider` interface, not concrete providers.
+
+> **Already OpenAI-compatible?** If the provider speaks the same
+> `/chat/completions` request/response shape as OpenAI (many do — Groq,
+> Together AI, OpenRouter, Ollama, etc.), you likely don't need a new
+> adapter file at all. Reuse
+> `createOpenAiCompatibleProvider(providerId, defaultBaseUrl)` from
+> `src/providers/openai.provider.ts` instead, the same way
+> `src/providers/custom.provider.ts` does.
 
 ## Scripts
 

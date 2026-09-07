@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![npm version](https://img.shields.io/npm/v/%40abjad-org%2Fresearch-chef.svg)](https://www.npmjs.com/package/@abjad-org/research-chef)
 [![CI](https://github.com/abjad-org/research-chef/actions/workflows/ci.yml/badge.svg)](https://github.com/abjad-org/research-chef/actions/workflows/ci.yml)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D18.17-brightgreen)](https://nodejs.org)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D18.19-brightgreen)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/built%20with-TypeScript-3178c6)](https://www.typescriptlang.org/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
@@ -23,7 +23,7 @@
 
 ## ✨ Features
 
-- 🔑 **BYOK (Bring Your Own Key)** — use your own OpenAI, Anthropic (Claude), or Google Gemini API key. Your key never touches any research-chef server, because there isn't one — everything runs locally on your machine.
+- 🔑 **BYOK (Bring Your Own Key)** — use your own OpenAI, Anthropic (Claude), Google Gemini API key, or point research-chef at any OpenAI-compatible endpoint (Groq, Together AI, OpenRouter, a local Ollama server, and more). Your key never touches any research-chef server, because there isn't one — everything runs locally on your machine.
 - 📋 **Structured research reports** — every topic gets a clear overview, key points, relevant context, and a practical takeaway, instead of a wall of text.
 - 💬 **Interactive follow-up chat** — the conversation doesn't end at the first answer. Ask "why", ask for examples, ask it to go deeper — right in the same session.
 - 🎨 **Pleasant terminal UI** — smooth prompts, spinners, and colors powered by [`@clack/prompts`](https://github.com/natemoo-re/clack) and [`picocolors`](https://github.com/alexeyraspopov/picocolors).
@@ -31,11 +31,12 @@
 
 ## 📦 Requirements
 
-- [Node.js](https://nodejs.org) **v18.17 or newer**
+- [Node.js](https://nodejs.org) **v18.19 or newer**
 - An API key from at least one supported provider:
   - [OpenAI](https://platform.openai.com/api-keys)
   - [Anthropic (Claude)](https://console.anthropic.com/settings/keys)
   - [Google Gemini](https://aistudio.google.com/app/apikey)
+  - Any OpenAI-compatible endpoint — [Groq](https://console.groq.com/keys), [Together AI](https://api.together.ai/settings/api-keys), [OpenRouter](https://openrouter.ai/keys), a local [Ollama](https://ollama.com) server, or your own self-hosted deployment
 
 You only need a key for the provider you actually want to use.
 
@@ -75,7 +76,7 @@ npm run dev
 ## 🖥️ How it works
 
 1. **Welcome screen** — research-chef greets you and explains what's about to happen.
-2. **Connect your provider** — choose OpenAI, Anthropic, or Gemini, then paste your API key (it's masked as you type). You can optionally pick a specific model.
+2. **Connect your provider** — choose OpenAI, Anthropic, Gemini, or a Custom (OpenAI-compatible) endpoint, then paste your API key (it's masked as you type). You can optionally pick a specific model. For a custom endpoint, you'll also enter its base URL — and if it looks like a local Ollama server, the API key becomes optional.
 3. **Ask your research topic** — type anything you want to learn about.
 4. **Sit back for a moment** — a loading spinner plays while the AI puts your report together.
 5. **Read your report** — a clean summary appears: overview, key points, context, and takeaway.

@@ -2,7 +2,7 @@
  * Identifiers for every AI provider research-chef knows how to talk to.
  * Add a new value here whenever a new provider adapter is introduced.
  */
-export type ProviderId = "openai" | "anthropic" | "gemini";
+export type ProviderId = "openai" | "anthropic" | "gemini" | "custom";
 
 /**
  * Static metadata describing a provider, used to render selection menus
@@ -14,6 +14,12 @@ export interface ProviderInfo {
   defaultModel: string;
   /** Roughly validates the shape of an API key for this provider. */
   keyLooksValid: (key: string) => boolean;
+  /**
+   * Whether this provider requires the user to type in their own base
+   * endpoint URL (e.g. a custom OpenAI-compatible provider). Built-in
+   * providers have a fixed, hardcoded endpoint and don't need this.
+   */
+  requiresCustomEndpoint?: boolean;
 }
 
 /**
@@ -33,19 +39,47 @@ export interface SessionConfig {
   provider: ProviderInfo;
   apiKey: string;
   model: string;
+  /**
+   * Base URL to send requests to, for providers that support a
+   * user-supplied endpoint (currently only the "custom" provider). Ignored
+   * by providers with a fixed, hardcoded endpoint.
+   */
+  baseUrl?: string;
 }
 
 /**
- * Contract every provider adapter must implement: given full conversation
- * history, return the assistant's next reply as plain text.
+ * Contract every provider adapter must implement.
  */
 export interface AiProvider {
+  /** Sends the full conversation and returns the assistant's next reply. */
   sendMessage(params: {
     apiKey: string;
     model: string;
     messages: ChatMessage[];
+    baseUrl?: string;
   }): Promise<string>;
+
+  /**
+   * Sends a minimal, low-cost request to verify that the API key is valid
+   * and that the given model is available for this account/plan. Used
+   * during setup so key/model problems surface immediately instead of
+   * after the user has already typed out a research topic.
+   */
+  testConnection(params: { apiKey: string; model: string; baseUrl?: string }): Promise<void>;
 }
+
+/**
+ * Coarse-grained classification of a provider error, used to decide how to
+ * react to it (e.g. retry, block setup, or let the user proceed anyway).
+ */
+export type ProviderErrorKind =
+  | "auth"          // invalid/expired API key (HTTP 401/403)
+  | "not_found"     // model not available for this account/plan (HTTP 404)
+  | "rate_limited"  // HTTP 429
+  | "network"       // request never reached the server (DNS, offline, etc.)
+  | "timeout"       // request was aborted after exceeding the time budget
+  | "server"        // HTTP 5xx, transient on the provider's side
+  | "unknown";      // anything else (unexpected shape, generic 4xx, etc.)
 
 /**
  * Error thrown by provider adapters so the UI layer can render a clean,
@@ -53,12 +87,19 @@ export interface AiProvider {
  */
 export class ProviderError extends Error {
   public readonly providerId: ProviderId;
+  public readonly kind: ProviderErrorKind;
   public readonly sourceError?: unknown;
 
-  constructor(message: string, providerId: ProviderId, sourceError?: unknown) {
+  constructor(
+    message: string,
+    providerId: ProviderId,
+    kind: ProviderErrorKind = "unknown",
+    sourceError?: unknown,
+  ) {
     super(message);
     this.name = "ProviderError";
     this.providerId = providerId;
+    this.kind = kind;
     this.sourceError = sourceError;
   }
 }

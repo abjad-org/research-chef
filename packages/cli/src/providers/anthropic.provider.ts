@@ -1,5 +1,6 @@
 import type { AiProvider, ChatMessage } from "../types/index.js";
 import { ProviderError } from "../types/index.js";
+import { fetchJsonWithRetry } from "./httpClient.js";
 
 const ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
@@ -10,9 +11,6 @@ interface AnthropicResponse {
     type: string;
     text?: string;
   }>;
-  error?: {
-    message?: string;
-  };
 }
 
 /**
@@ -23,45 +21,53 @@ export const anthropicProvider: AiProvider = {
   async sendMessage({ apiKey, model, messages }): Promise<string> {
     const { system, conversation } = splitSystemPrompt(messages);
 
-    let response: Response;
-    try {
-      response = await fetch(ANTHROPIC_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": ANTHROPIC_VERSION,
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: MAX_TOKENS,
-          system,
-          messages: conversation,
-        }),
-      });
-    } catch (error) {
-      throw new ProviderError(
-        "Could not reach Anthropic. Please check your internet connection.",
-        "anthropic",
-        error,
-      );
+    const result = await fetchJsonWithRetry<AnthropicResponse>(ANTHROPIC_ENDPOINT, {
+      method: "POST",
+      headers: buildHeaders(apiKey),
+      body: JSON.stringify({
+        model,
+        max_tokens: MAX_TOKENS,
+        system,
+        messages: conversation,
+      }),
+    });
+
+    if (!result.ok) {
+      throw new ProviderError(`Anthropic error: ${result.message}`, "anthropic", result.kind, result.cause);
     }
 
-    const data = (await response.json().catch(() => null)) as AnthropicResponse | null;
-
-    if (!response.ok) {
-      const message = data?.error?.message ?? `Request failed with status ${response.status}.`;
-      throw new ProviderError(`Anthropic error: ${message}`, "anthropic");
-    }
-
-    const textBlock = data?.content?.find((block) => block.type === "text");
+    const textBlock = result.data.content?.find((block) => block.type === "text");
     if (!textBlock?.text) {
-      throw new ProviderError("Anthropic returned an empty response.", "anthropic");
+      throw new ProviderError("Anthropic returned an empty response.", "anthropic", "unknown");
     }
 
     return textBlock.text.trim();
   },
+
+  async testConnection({ apiKey, model }): Promise<void> {
+    const result = await fetchJsonWithRetry<AnthropicResponse>(ANTHROPIC_ENDPOINT, {
+      method: "POST",
+      headers: buildHeaders(apiKey),
+      body: JSON.stringify({
+        model,
+        max_tokens: 1,
+        messages: [{ role: "user", content: "Hi" }],
+      }),
+    });
+
+    if (!result.ok) {
+      throw new ProviderError(`Anthropic error: ${result.message}`, "anthropic", result.kind, result.cause);
+    }
+  },
 };
+
+function buildHeaders(apiKey: string): Record<string, string> {
+  return {
+    "Content-Type": "application/json",
+    "x-api-key": apiKey,
+    "anthropic-version": ANTHROPIC_VERSION,
+  };
+}
 
 /**
  * Anthropic's API takes the system prompt as a separate top-level field

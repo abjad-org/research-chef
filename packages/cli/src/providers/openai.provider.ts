@@ -1,7 +1,8 @@
-import type { AiProvider, ChatMessage } from "../types/index.js";
+import type { AiProvider, ChatMessage, ProviderId } from "../types/index.js";
 import { ProviderError } from "../types/index.js";
+import { fetchJsonWithRetry } from "./httpClient.js";
 
-const OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions";
+export const OPENAI_DEFAULT_BASE_URL = "https://api.openai.com/v1";
 
 interface OpenAiChatResponse {
   choices?: Array<{
@@ -9,55 +10,88 @@ interface OpenAiChatResponse {
       content?: string;
     };
   }>;
-  error?: {
-    message?: string;
-  };
 }
 
 /**
- * Adapter for OpenAI's Chat Completions API.
+ * Builds an adapter for OpenAI's Chat Completions API shape. Used both for
+ * the built-in "openai" provider (fixed base URL) and for the "custom"
+ * provider, which points at any OpenAI-compatible endpoint the user
+ * supplies (Groq, Together AI, OpenRouter, Ollama, self-hosted, etc).
+ *
  * Docs: https://platform.openai.com/docs/api-reference/chat
  */
-export const openAiProvider: AiProvider = {
-  async sendMessage({ apiKey, model, messages }): Promise<string> {
-    let response: Response;
+export function createOpenAiCompatibleProvider(providerId: ProviderId, defaultBaseUrl: string): AiProvider {
+  function resolveEndpoint(baseUrl: string | undefined): string {
+    const base = (baseUrl?.trim() || defaultBaseUrl).replace(/\/+$/, "");
 
-    try {
-      response = await fetch(OPENAI_ENDPOINT, {
+    if (!base) {
+      throw new ProviderError(
+        "No endpoint URL was configured for this provider.",
+        providerId,
+        "unknown",
+      );
+    }
+
+    return `${base}/chat/completions`;
+  }
+
+  return {
+    async sendMessage({ apiKey, model, messages, baseUrl }): Promise<string> {
+      const result = await fetchJsonWithRetry<OpenAiChatResponse>(resolveEndpoint(baseUrl), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
+        headers: buildHeaders(apiKey),
         body: JSON.stringify({
           model,
           messages: toOpenAiMessages(messages),
           temperature: 0.7,
         }),
       });
-    } catch (error) {
-      throw new ProviderError(
-        "Could not reach OpenAI. Please check your internet connection.",
-        "openai",
-        error,
-      );
-    }
 
-    const data = (await response.json().catch(() => null)) as OpenAiChatResponse | null;
+      if (!result.ok) {
+        throw new ProviderError(`Request failed: ${result.message}`, providerId, result.kind, result.cause);
+      }
 
-    if (!response.ok) {
-      const message = data?.error?.message ?? `Request failed with status ${response.status}.`;
-      throw new ProviderError(`OpenAI error: ${message}`, "openai");
-    }
+      const content = result.data.choices?.[0]?.message?.content;
+      if (!content) {
+        throw new ProviderError("The provider returned an empty response.", providerId, "unknown");
+      }
 
-    const content = data?.choices?.[0]?.message?.content;
-    if (!content) {
-      throw new ProviderError("OpenAI returned an empty response.", "openai");
-    }
+      return content.trim();
+    },
 
-    return content.trim();
-  },
-};
+    async testConnection({ apiKey, model, baseUrl }): Promise<void> {
+      const result = await fetchJsonWithRetry<OpenAiChatResponse>(resolveEndpoint(baseUrl), {
+        method: "POST",
+        headers: buildHeaders(apiKey),
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: "Hi" }],
+          max_tokens: 1,
+        }),
+      });
+
+      if (!result.ok) {
+        throw new ProviderError(`Request failed: ${result.message}`, providerId, result.kind, result.cause);
+      }
+    },
+  };
+}
+
+/** The built-in OpenAI provider, always pointed at OpenAI's own API. */
+export const openAiProvider: AiProvider = createOpenAiCompatibleProvider("openai", OPENAI_DEFAULT_BASE_URL);
+
+function buildHeaders(apiKey: string): Record<string, string> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+
+  // Some OpenAI-compatible servers (e.g. a local Ollama instance) don't
+  // require authentication at all; skip the header entirely rather than
+  // sending "Bearer " with an empty key.
+  if (apiKey.trim().length > 0) {
+    headers.Authorization = `Bearer ${apiKey}`;
+  }
+
+  return headers;
+}
 
 function toOpenAiMessages(messages: ChatMessage[]) {
   return messages.map((message) => ({
