@@ -1,6 +1,6 @@
 {
   "name": "@abjad-org/research-chef",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "research-chef: an interactive, BYOK-powered AI research assistant for your terminal",
   "type": "module",
   "bin": {

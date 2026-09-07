@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Nothing yet — this section will track changes as they land on `main` ahead
 of the next release.
 
+## [0.2.1] - 2026-09-07
+### Fixed
+- Excluded test files (`**/*.test.ts` and the `test/` directory) from `tsconfig.json`, so a test file accidentally placed inside `src/` no longer breaks `npm run typecheck` and `npm run build`.
+- Replaced the shell-glob-based `npm test` script (`tsx --test test/**/*.test.ts`) with a small cross-platform runner (`scripts/run-tests.mjs`) that discovers test files using Node's own filesystem APIs instead of relying on shell glob expansion. The previous script worked in shells that support globstar (e.g. bash on most developer machines) but failed in the POSIX `sh` used by GitHub Actions runners, causing CI to fail even though local runs succeeded.
+
 ## [0.2.0] - 2026-09-07
 
 ### Added
