@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+Nothing yet — this section will track changes as they land on `main` ahead
+of the next release.
+
+## [0.3.0] - 2026-09-12
+
 ### Added
 
 - **Native web search + verifiable citations (Priority 1)** — built-in
@@ -195,7 +200,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Project documentation: README, CONTRIBUTING guide, Code of Conduct,
   Security Policy, and this Changelog
 
-[Unreleased]: https://github.com/abjad-org/research-chef/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/abjad-org/research-chef/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/abjad-org/research-chef/compare/v0.2.1...v0.3.0
+[0.2.1]: https://github.com/abjad-org/research-chef/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/abjad-org/research-chef/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/abjad-org/research-chef/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/abjad-org/research-chef/compare/v0.1.0...v0.1.1
