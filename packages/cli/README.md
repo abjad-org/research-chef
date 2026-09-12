@@ -14,7 +14,12 @@ and [`picocolors`](https://github.com/alexeyraspopov/picocolors).
   a minimal request during setup, so problems surface immediately instead
   of after you've already typed out a research topic.
 - 🔍 **One-shot research report** — enter a topic and get a clear, structured
-  summary (overview, key points, context, takeaway).
+  summary (overview, key points, context, takeaway) backed by live web
+  search, with a clickable `Sources:` section (title + full URL) so every
+  claim can be verified.
+- 🗺️ **Outline-first reports** — approve, edit, or regenerate the proposed
+  outline (sections + sub-questions) before the full report is written;
+  navigate long reports with `/sections` and `/goto <number>`.
 - 💬 **Interactive follow-up chat** — keep asking questions in the same
   session, switch models with `/model`, start fresh with `/clear`, or save
   the conversation with `/save` — until you type `/exit`.
@@ -65,17 +70,32 @@ npm run dev
    rather than later.
 4. **Enter a research topic** — e.g. *"The impact of AI on renewable energy
    adoption"*.
-5. **Research spinner** — a loading spinner plays while the AI puts together
-   its answer.
-6. **Research report** — a structured, easy-to-read summary is printed in a
-   boxed panel.
-7. **Chat loop** — keep asking follow-up questions, or use a command:
-   - `/model` — switch to a different AI model mid-conversation
-   - `/clear` — clear the conversation and start a new topic
-   - `/save` — export the conversation to a Markdown file under
-     `~/.research-chef/exports/`
-   - `/help` — show all available commands
-   - `/exit` — quit research-chef
+5. **Approve the outline** — review the proposed sections and guiding
+   sub-questions, then approve, edit (your own headings separated by `;`),
+   or regenerate before the full report is written.
+6. **Research spinner** — a loading spinner plays while the AI puts together
+   its answer, following your approved outline.
+7. **Research report** — a structured, easy-to-read summary is printed in a
+   boxed panel, ending with a `Sources:` list of full URLs. Built-in
+   providers (OpenAI via the Responses API, Anthropic, Gemini) search the
+   live web automatically; custom endpoints answer from the model's own
+   knowledge (noted once, neutrally, during setup).
+7. **Chat loop** — keep asking follow-up questions (auto-saved after every
+   reply), or use a command:
+    - `/model` — switch to a different AI model mid-conversation
+    - `/clear` — clear the conversation and start a new topic
+    - `/save` — export the conversation to a Markdown file under
+      `~/.research-chef/exports/`
+    - `/history [filter]` — list auto-saved sessions, optionally filtered by topic
+    - `/resume <number>` — resume a past session from `/history`
+    - `/sections` — list the sections of the current report
+    - `/goto <number>` — jump to one section of the current report
+    - `/help` — show all available commands
+    - `/exit` — quit research-chef
+
+Sessions are auto-saved as JSON under `~/.research-chef/sessions/` (API
+keys are never written to disk). At startup, when past sessions exist,
+you can resume one instead of starting fresh.
 
 ## Where does my API key go?
 
@@ -100,8 +120,22 @@ src/
 │   └── gemini.provider.ts
 ├── core/                 # Provider-agnostic research/chat logic
 │   ├── prompts.ts        # System prompt & kickoff message templates
+│   ├── citations.ts      # Dedupe/format/append for web-source citations
+│   ├── outline.ts        # Outline parsing + report section navigation
 │   ├── conversation.ts   # Conversation history state
+│   ├── sessionStore.ts   # Auto-save/list/load/search for past sessions
 │   └── engine.ts         # Orchestrates conversation + provider calls
+└── ui/                   # clack + picocolors presentation layer
+    ├── theme.ts          # Centralized colors & text wrapping helper
+    ├── banner.ts         # Intro/outro screens
+    ├── setup.ts          # Provider selection + API key prompt
+    ├── topic.ts          # Research topic prompt
+    ├── resumeStartup.ts  # Startup resume picker
+    ├── outlineFlow.ts    # Outline approve/edit/regenerate loop
+    ├── researchFlow.ts   # Spinner + initial research report
+    ├── chatLoop.ts       # Interactive follow-up chat loop
+    ├── render.ts         # Renders reports / replies / errors
+    └── cancel.ts         # Shared Ctrl+C / Esc handling
 └── ui/                   # clack + picocolors presentation layer
     ├── theme.ts          # Centralized colors & text wrapping helper
     ├── banner.ts         # Intro/outro screens

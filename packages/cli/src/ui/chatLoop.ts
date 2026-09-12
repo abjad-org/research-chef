@@ -1,5 +1,6 @@
 import * as clack from "@clack/prompts";
 import type { ResearchEngine } from "../core/engine.js";
+import { SessionStore, persistCurrentSession } from "../core/sessionStore.js";
 import { ProviderError } from "../types/index.js";
 import { theme } from "./theme.js";
 import { renderAssistantReply, renderError } from "./render.js";
@@ -11,7 +12,10 @@ import { SLASH_COMMANDS, handleCommand } from "./commands.js";
  * a message, sends it through the engine, and prints the reply — until the
  * user types /exit (or cancels the prompt).
  */
-export async function runChatLoop(engine: ResearchEngine): Promise<void> {
+export async function runChatLoop(
+  engine: ResearchEngine,
+  sessionStore: SessionStore = new SessionStore(),
+): Promise<void> {
   clack.log.step(theme.heading("Step 4 — Keep exploring"));
   clack.log.message(
     [
@@ -36,7 +40,7 @@ export async function runChatLoop(engine: ResearchEngine): Promise<void> {
       continue;
     }
 
-    const commandResult = await handleCommand(message, engine);
+    const commandResult = await handleCommand(message, engine, undefined, sessionStore);
 
     if (commandResult.handled) {
       if (commandResult.shouldExit) {
@@ -45,11 +49,15 @@ export async function runChatLoop(engine: ResearchEngine): Promise<void> {
       continue;
     }
 
-    await handleUserMessage(engine, message);
+    await handleUserMessage(engine, message, sessionStore);
   }
 }
 
-async function handleUserMessage(engine: ResearchEngine, message: string): Promise<void> {
+async function handleUserMessage(
+  engine: ResearchEngine,
+  message: string,
+  sessionStore: SessionStore,
+): Promise<void> {
   const spinner = clack.spinner();
   spinner.start("Thinking...");
 
@@ -57,6 +65,7 @@ async function handleUserMessage(engine: ResearchEngine, message: string): Promi
     const reply = await engine.chat(message);
     spinner.stop("Got a reply.");
     renderAssistantReply(reply);
+    await persistCurrentSession(sessionStore, engine);
   } catch (error) {
     spinner.stop("Something went wrong.");
     renderError(describeError(error));

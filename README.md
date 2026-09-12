@@ -25,7 +25,10 @@
 
 - 🔑 **BYOK (Bring Your Own Key)** — use your own OpenAI, Anthropic (Claude), Google Gemini API key, or point research-chef at any OpenAI-compatible endpoint (Groq, Together AI, OpenRouter, a local Ollama server, and more). Your key never touches any research-chef server, because there isn't one — everything runs locally on your machine.
 - 📋 **Structured research reports** — every topic gets a clear overview, key points, relevant context, and a practical takeaway, instead of a wall of text.
+- 🗺️ **Outline-first reports** — before the full report, research-chef proposes an outline (sections + sub-questions) you can approve, edit, or regenerate. Long reports stay navigable with `/sections` and `/goto <number>`.
+- 🌐 **Native web search + verifiable citations** — OpenAI (Responses `web_search`), Anthropic (`web_search`), and Gemini (`google_search` grounding) search the live web on every request and finish each report with a clickable `Sources:` section (title + full URL per entry). Custom endpoints behave as before, using the model's own knowledge.
 - 💬 **Interactive follow-up chat** — the conversation doesn't end at the first answer. Ask "why", ask for examples, ask it to go deeper — right in the same session.
+- 💾 **Auto-saved sessions + resume** — every turn is saved automatically under `~/.research-chef/sessions/`. List them with `/history`, filter with `/history <topic>`, resume with `/resume <number>` — or pick one up at startup instead of starting fresh.
 - 🎨 **Pleasant terminal UI** — smooth prompts, spinners, and colors powered by [`@clack/prompts`](https://github.com/natemoo-re/clack) and [`picocolors`](https://github.com/alexeyraspopov/picocolors).
 - 🧩 **Modular by design** — adding support for a new AI provider takes three small, isolated steps. See [Adding a new provider](./packages/cli/README.md#adding-a-new-provider).
 
@@ -78,9 +81,10 @@ npm run dev
 1. **Welcome screen** — research-chef greets you and explains what's about to happen.
 2. **Connect your provider** — choose OpenAI, Anthropic, Gemini, or a Custom (OpenAI-compatible) endpoint, then paste your API key (it's masked as you type). You can optionally pick a specific model. For a custom endpoint, you'll also enter its base URL — and if it looks like a local Ollama server, the API key becomes optional.
 3. **Ask your research topic** — type anything you want to learn about.
-4. **Sit back for a moment** — a loading spinner plays while the AI puts your report together.
-5. **Read your report** — a clean summary appears: overview, key points, context, and takeaway.
-6. **Keep the conversation going** — ask follow-up questions for as long as you like. Type `/exit` when you're done, or `/help` for a quick reminder of the available commands.
+4. **Approve the outline** — review the proposed sections and sub-questions, then approve, edit, or regenerate before the full report is written.
+5. **Sit back for a moment** — a loading spinner plays while the AI puts your report together.
+6. **Read your report** — a clean summary appears: overview, key points, context, and takeaway. For long reports, `/sections` lists each part and `/goto <number>` jumps to one.
+7. **Keep the conversation going** — ask follow-up questions for as long as you like. Type `/exit` when you're done, or `/help` for a quick reminder of the available commands.
 
 ## 🔒 Is my API key safe?
 

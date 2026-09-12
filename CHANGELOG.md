@@ -7,8 +7,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Nothing yet — this section will track changes as they land on `main` ahead
-of the next release.
+### Added
+
+- **Native web search + verifiable citations (Priority 1)** — built-in
+  providers now search the live web on every research request and append a
+  clickable `Sources:` section (title + full URL per entry) to each report:
+  - OpenAI now uses the Responses API (`POST /v1/responses`) with the
+    native `web_search` tool; citations are parsed from `url_citation`
+    annotations (plus the aggregated `output_text` fallback).
+  - Anthropic Messages API requests include the `web_search_20250305`
+    server tool (`max_uses: 5`); citations are parsed from
+    `web_search_result_location` blocks, with `pause_turn` continuations
+    (up to 3) handled inside the adapter.
+  - Gemini `generateContent` requests include the `google_search` grounding
+    tool; sources are parsed from `groundingMetadata.groundingChunks`.
+  - Shared helpers in `src/core/citations.ts` (`deduplicateSources`,
+    `formatSourcesSection`, `appendSourcesSection`) keep source handling
+    provider-agnostic; the system prompt now asks for inline URLs plus a
+    final `Sources:` list.
+  - The Custom (OpenAI-compatible) provider is unchanged — plain Chat
+    Completions with no search tool. Its setup flow shows a one-time,
+    neutral note ("responses from this endpoint are based on the model's
+    training data, not real-time web search"), shown once during setup
+    only and never repeated or framed as a limitation.
+  - New automated coverage: `test/citations.test.ts` (10 tests) and
+    `test/websearch.test.ts` (13 tests); the built-in OpenAI cases in
+    `test/openai.compatible.test.ts` were updated for the Responses
+    endpoint. Suite total: 99 tests, all passing.
+
+- **Session management (Priority 2)** — conversations are now auto-saved
+  and resumable, so work is never lost when the user forgets `/save`:
+  - Every successful research report and follow-up reply is auto-saved as
+    JSON under `~/.research-chef/sessions/` (same stable file updated
+    across turns; API keys are never written to disk — only provider id,
+    model, topic, and messages).
+  - New `/history [filter]` command lists past sessions newest-first with
+    topic, date, and message count; an optional filter narrows by topic
+    substring (case-insensitive).
+  - New `/resume <number|id>` command restores a past session into the
+    current engine (confirming first when unsaved work is in progress).
+  - At startup, when past sessions exist, a picker offers to resume one
+    instead of starting fresh — otherwise the normal topic flow runs.
+  - New coverage in `test/sessions.test.ts` (26 tests: store round-trip,
+    auto-save, restore, list/filter/resume helpers, startup choices, and
+    command handlers). Suite total: 125 tests, all passing.
+
+- **Structure & organization (Priority 3)** — reports are now planned
+  before they're written, and long reports are navigable:
+  - Before the full report, the engine drafts an outline (3-6 sections,
+    each with guiding sub-questions) that the user can **Approve**,
+    **Edit** (free-text headings separated by `;`), or **Regenerate**.
+    Outline drafting never pollutes the main conversation history, and a
+    drafting failure falls back to a direct report instead of blocking.
+  - The approved outline is embedded in the report request so each heading
+    becomes a section header; broad topics are broken into sub-questions
+    up front via the outline prompt.
+  - New `/sections` command lists the sections of the latest report and
+    new `/goto <number|heading>` jumps to one section (by number or
+    case-insensitive heading match). Splitting prefers Markdown headings,
+    falls back to short numbered headings, and excludes the trailing
+    `Sources:` block from navigation.
+  - New coverage in `test/outline.test.ts` (31 tests: prompt builders,
+    outline parsing/editing/display, section splitting, engine outline +
+    last-report tracking, the approve/edit/regenerate flow, and the new
+    commands). Suite total: 156 tests, all passing.
 
 ## [0.2.1] - 2026-09-07
 ### Fixed

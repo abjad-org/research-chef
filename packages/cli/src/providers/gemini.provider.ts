@@ -1,20 +1,34 @@
-import type { AiProvider, ChatMessage } from "../types/index.js";
+import type { AiProvider, ChatMessage, WebSource } from "../types/index.js";
 import { ProviderError } from "../types/index.js";
+import { appendSourcesSection } from "../core/citations.js";
 import { fetchJsonWithRetry } from "./httpClient.js";
 
 const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
+interface GeminiGroundingChunk {
+  web?: {
+    uri?: string;
+    title?: string;
+  };
+}
+
+interface GeminiCandidate {
+  content?: {
+    parts?: Array<{ text?: string }>;
+  };
+  groundingMetadata?: {
+    groundingChunks?: GeminiGroundingChunk[];
+  };
+}
+
 interface GeminiResponse {
-  candidates?: Array<{
-    content?: {
-      parts?: Array<{ text?: string }>;
-    };
-  }>;
+  candidates?: GeminiCandidate[];
 }
 
 /**
- * Adapter for Google's Gemini generateContent API.
- * Docs: https://ai.google.dev/api/generate-content
+ * Adapter for Google's Gemini generateContent API with native grounding
+ * via the `google_search` tool always enabled.
+ * Docs: https://ai.google.dev/gemini-api/docs/generate-content/google-search
  */
 export const geminiProvider: AiProvider = {
   async sendMessage({ apiKey, model, messages }): Promise<string> {
@@ -23,19 +37,19 @@ export const geminiProvider: AiProvider = {
     const result = await fetchJsonWithRetry<GeminiResponse>(buildUrl(model, apiKey), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ systemInstruction, contents }),
+      body: JSON.stringify({ systemInstruction, contents, tools: [{ google_search: {} }] }),
     });
 
     if (!result.ok) {
       throw new ProviderError(`Gemini error: ${result.message}`, "gemini", result.kind, result.cause);
     }
 
-    const text = result.data.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("");
+    const { text, sources } = parseGeminiResponse(result.data);
     if (!text) {
       throw new ProviderError("Gemini returned an empty response.", "gemini", "unknown");
     }
 
-    return text.trim();
+    return appendSourcesSection(text, sources);
   },
 
   async testConnection({ apiKey, model }): Promise<void> {
@@ -75,4 +89,35 @@ function toGeminiPayload(messages: ChatMessage[]) {
   const systemInstruction = systemContent ? { parts: [{ text: systemContent }] } : undefined;
 
   return { systemInstruction, contents };
+}
+
+/**
+ * Extracts assistant text plus grounded `web` chunks (uri + title) from a
+ * generateContent response. Handles both `groundingMetadata` (current) and
+ * `grounding_metadata` (older casing) defensively.
+ */
+export function parseGeminiResponse(data: GeminiResponse): {
+  text: string;
+  sources: WebSource[];
+} {
+  const candidate = data.candidates?.[0];
+  const text = (candidate?.content?.parts?.map((part) => part.text ?? "").join("") ?? "").trim();
+
+  const raw = data as GeminiResponse & Record<string, unknown>;
+
+  const metadata = (candidate?.groundingMetadata ??
+    (candidate as { grounding_metadata?: { groundingChunks?: GeminiGroundingChunk[] } } | undefined)?.grounding_metadata ??
+    raw.groundingMetadata) as
+    | { groundingChunks?: GeminiGroundingChunk[]; grounding_chunks?: GeminiGroundingChunk[] }
+    | undefined;
+
+  const chunks = metadata?.groundingChunks ?? metadata?.grounding_chunks ?? [];
+  const sources: WebSource[] = [];
+  for (const chunk of chunks) {
+    if (chunk.web?.uri) {
+      sources.push({ title: chunk.web.title ?? chunk.web.uri, url: chunk.web.uri });
+    }
+  }
+
+  return { text, sources };
 }

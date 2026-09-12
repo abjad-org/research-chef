@@ -1,7 +1,14 @@
-import type { AiProvider, SessionConfig } from "../types/index.js";
+import type { AiProvider, ChatMessage, SessionConfig } from "../types/index.js";
 import { ProviderError } from "../types/index.js";
 import { Conversation } from "./conversation.js";
 import { buildResearchKickoffMessage } from "./prompts.js";
+import {
+  buildOutlinePrompt,
+  buildReportFromOutlinePrompt,
+  parseOutlineText,
+  type ReportOutline,
+} from "./outline.js";
+import { RESEARCH_SYSTEM_PROMPT } from "./prompts.js";
 
 /**
  * Orchestrates a research session: owns the conversation history and
@@ -11,6 +18,8 @@ import { buildResearchKickoffMessage } from "./prompts.js";
 export class ResearchEngine {
   private readonly conversation = new Conversation();
   private currentTopic: string;
+  private sessionId: string | undefined;
+  private lastReport: string | undefined;
 
   constructor(
     private readonly provider: AiProvider,
@@ -23,7 +32,60 @@ export class ResearchEngine {
   async research(topic: string): Promise<string> {
     this.currentTopic = topic;
     const kickoffMessage = buildResearchKickoffMessage(topic);
-    return this.send(kickoffMessage);
+    const report = await this.send(kickoffMessage);
+    this.lastReport = report;
+    return report;
+  }
+
+  /**
+   * Drafts an outline (sections + sub-questions) for a topic without
+   * touching the main conversation history, so regenerating is cheap and
+   * leaves no meta-turns behind.
+   */
+  async generateOutline(topic: string): Promise<ReportOutline> {
+    try {
+      const raw = await this.provider.sendMessage({
+        apiKey: this.config.apiKey,
+        model: this.config.model,
+        messages: [
+          { role: "system", content: RESEARCH_SYSTEM_PROMPT },
+          { role: "user", content: buildOutlinePrompt(topic) },
+        ],
+        baseUrl: this.config.baseUrl,
+      });
+
+      const outline = parseOutlineText(topic, raw);
+      if (outline.sections.length === 0) {
+        throw new ProviderError(
+          "The provider returned an outline without any sections.",
+          this.config.provider.id,
+          "unknown",
+        );
+      }
+      return outline;
+    } catch (error) {
+      if (error instanceof ProviderError) throw error;
+      throw new ProviderError(
+        "Something unexpected went wrong while drafting the outline.",
+        this.config.provider.id,
+        "unknown",
+        error,
+      );
+    }
+  }
+
+  /** Generates the full report following a user-approved outline. */
+  async researchWithOutline(topic: string, outline: ReportOutline): Promise<string> {
+    this.currentTopic = topic;
+    const kickoffMessage = buildReportFromOutlinePrompt(topic, outline);
+    const report = await this.send(kickoffMessage);
+    this.lastReport = report;
+    return report;
+  }
+
+  /** Returns the most recent full research report, if any. */
+  getLastReport(): string | undefined {
+    return this.lastReport;
   }
 
   /** Sends a follow-up chat message and returns the assistant's reply. */
@@ -92,6 +154,35 @@ export class ResearchEngine {
   resetConversation(): void {
     this.conversation.reset();
     this.currentTopic = "Untitled research session";
+    this.sessionId = undefined;
+    this.lastReport = undefined;
+  }
+
+  /**
+   * Restores a previously saved session (topic + visible messages) into
+   * this engine, e.g. after `/resume`. Only `user`/`assistant` turns are
+   * restored — the system prompt is always the current one.
+   */
+  restoreSession(topic: string, messages: ChatMessage[], sessionId?: string): void {
+    this.conversation.reset();
+    for (const message of messages) {
+      if (message.role === "user") this.conversation.addUserMessage(message.content);
+      else if (message.role === "assistant") this.conversation.addAssistantMessage(message.content);
+    }
+    this.currentTopic = topic;
+    this.sessionId = sessionId;
+    const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+    this.lastReport = lastAssistant?.content;
+  }
+
+  /** Stable id used to update the same auto-save file across turns. */
+  getSessionId(): string | undefined {
+    return this.sessionId;
+  }
+
+  /** Sets the auto-save file id (used after the first save of a session). */
+  setSessionId(id: string): void {
+    this.sessionId = id;
   }
 
   /** Returns the full conversation history, excluding the system prompt. */

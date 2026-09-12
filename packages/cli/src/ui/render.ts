@@ -17,6 +17,11 @@ export function renderAssistantReply(reply: string): void {
   console.log();
 }
 
+/** Renders one navigable section of a long report as a boxed note. */
+export function renderReportSection(heading: string, body: string): void {
+  clack.note(wrapText(body), theme.heading(heading));
+}
+
 /** Renders a friendly error message without dumping a raw stack trace. */
 export function renderError(message: string): void {
   clack.log.error(theme.danger(message));

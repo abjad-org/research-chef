@@ -20,6 +20,13 @@ export interface ProviderInfo {
    * providers have a fixed, hardcoded endpoint and don't need this.
    */
   requiresCustomEndpoint?: boolean;
+  /**
+   * Whether this provider supports native real-time web search via its own
+   * API (OpenAI Responses `web_search`, Anthropic `web_search`, Gemini
+   * `google_search`). The custom provider never does — it behaves as a
+   * plain Chat Completions endpoint.
+   */
+  supportsNativeSearch?: boolean;
 }
 
 /**
@@ -66,6 +73,15 @@ export interface AiProvider {
    * after the user has already typed out a research topic.
    */
   testConnection(params: { apiKey: string; model: string; baseUrl?: string }): Promise<void>;
+}
+
+/**
+ * A single verifiable web source backing a research report — always a
+ * title plus a full, clickable URL (never just a bare source name).
+ */
+export interface WebSource {
+  title: string;
+  url: string;
 }
 
 /**

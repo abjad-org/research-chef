@@ -27,6 +27,11 @@ export async function runProviderSetup(): Promise<SessionConfig> {
 
     if (outcome === "ok") {
       clack.log.success(`Connected to ${theme.success(provider.label)} using ${theme.accent(model)}.`);
+      // Shown exactly once here, during setup — never repeated in the chat
+      // loop, reports, or exports, and worded neutrally (not as a limitation).
+      if (provider.id === "custom") {
+        clack.log.message(theme.subtle(getCustomProviderDisclaimer()));
+      }
       return { provider, apiKey, model, baseUrl };
     }
 
@@ -135,6 +140,18 @@ async function promptModel(provider: ProviderInfo): Promise<string> {
   }
 
   return (customModel as string).trim() || provider.defaultModel;
+}
+
+/**
+ * Neutral, one-time note shown during custom-endpoint setup. It states how
+ * answers are produced without framing anything as a limitation.
+ */
+export const CUSTOM_TRAINING_DATA_DISCLAIMER =
+  "Note: responses from this endpoint are based on the model's training data, not real-time web search.";
+
+/** Returns the one-time disclaimer shown for custom (OpenAI-compatible) endpoints. */
+export function getCustomProviderDisclaimer(): string {
+  return CUSTOM_TRAINING_DATA_DISCLAIMER;
 }
 
 type VerifyOutcome = "ok" | "retry_key" | "retry_model";

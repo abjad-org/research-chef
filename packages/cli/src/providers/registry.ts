@@ -13,18 +13,21 @@ export const PROVIDERS: ProviderInfo[] = [
     label: "OpenAI",
     defaultModel: "gpt-5.6-terra",
     keyLooksValid: (key) => key.startsWith("sk-") && key.length >= 20,
+    supportsNativeSearch: true,
   },
   {
     id: "anthropic",
     label: "Anthropic",
     defaultModel: "claude-sonnet-5",
     keyLooksValid: (key) => key.startsWith("sk-ant-") && key.length >= 20,
+    supportsNativeSearch: true,
   },
   {
     id: "gemini",
     label: "Google Gemini",
     defaultModel: "gemini-3.8-flash",
     keyLooksValid: (key) => key.length >= 20,
+    supportsNativeSearch: true,
   },
   {
     id: "custom",
@@ -36,6 +39,9 @@ export const PROVIDERS: ProviderInfo[] = [
     // setup.ts for the one case where the key is allowed to be empty.
     keyLooksValid: () => true,
     requiresCustomEndpoint: true,
+    // Custom endpoints (including Ollama) speak plain Chat Completions with
+    // no native search tool — responses reflect the model's own knowledge.
+    supportsNativeSearch: false,
   },
 ];
 

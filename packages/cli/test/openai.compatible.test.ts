@@ -21,12 +21,21 @@ function successBody() {
   return { choices: [{ message: { content: "Hello there" } }] };
 }
 
-describe("openAiProvider (built-in)", () => {
-  test("sends requests to OpenAI's default base URL", async () => {
+describe("openAiProvider (built-in, Responses API with web search)", () => {
+  test("sends requests to OpenAI's Responses endpoint with the web_search tool", async () => {
     let requestedUrl: string | undefined;
-    global.fetch = (async (url: string) => {
+    let requestedBody: Record<string, unknown> | undefined;
+    global.fetch = (async (url: string, init: RequestInit) => {
       requestedUrl = url;
-      return jsonResponse(200, successBody());
+      requestedBody = JSON.parse(init.body as string) as Record<string, unknown>;
+      return jsonResponse(200, {
+        output: [
+          {
+            type: "message",
+            content: [{ type: "output_text", text: "Hello there", annotations: [] }],
+          },
+        ],
+      });
     }) as typeof fetch;
 
     await openAiProvider.sendMessage({
@@ -35,14 +44,22 @@ describe("openAiProvider (built-in)", () => {
       messages: [{ role: "user", content: "hi" }],
     });
 
-    assert.equal(requestedUrl, `${OPENAI_DEFAULT_BASE_URL}/chat/completions`);
+    assert.equal(requestedUrl, `${OPENAI_DEFAULT_BASE_URL}/responses`);
+    assert.deepEqual((requestedBody?.tools as unknown[])[0], { type: "web_search" });
   });
 
   test("includes a Bearer authorization header when a key is provided", async () => {
     let capturedHeaders: Record<string, string> | undefined;
     global.fetch = (async (_url: string, init: RequestInit) => {
       capturedHeaders = init.headers as Record<string, string>;
-      return jsonResponse(200, successBody());
+      return jsonResponse(200, {
+        output: [
+          {
+            type: "message",
+            content: [{ type: "output_text", text: "Hello there", annotations: [] }],
+          },
+        ],
+      });
     }) as typeof fetch;
 
     await openAiProvider.sendMessage({
